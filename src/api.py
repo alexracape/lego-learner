@@ -23,7 +23,7 @@ BS_USERNAME = os.environ.get('BS_USERNAME')
 BS_PASSWORD = os.environ.get('BS_PASSWORD')
 
 
-def get_set_price(set_id, user_hash):
+def get_set_info(set_id, user_hash):
     """Use Brickset API to get the price of a set"""
 
     # Set the API endpoint and parameters
@@ -62,7 +62,7 @@ def get_user_hash(username, password):
     return response.json()["hash"]
 
 
-def get_set_historical(set_id):
+def get_price_guide(set_id):
     """Use Bricklink API to get the historical price of a set"""
 
     # Set the API endpoint and parameters
@@ -82,23 +82,50 @@ def get_set_historical(set_id):
 
     # Send the API request
     response = requests.get(api_endpoint, auth=oauth, params=params)
+    response = response.json()
+    try:
+        details = response["data"]["price_detail"]
+        avg_price = response["data"]["avg_price"]
+        return avg_price
+    except:
+        print(f"Uh oh: {response}")
+        return 0
 
-    # Return the price
-    return response.json()
 
 
 def main():
     """Main function for simple tests"""
 
-    # Just gets some space themes for now, price may not actually be there
-    user_hash = get_user_hash(BS_USERNAME, BS_PASSWORD)
-    death_star_price = get_set_price("75159-1", user_hash)
-    print(f"Death Star price: {death_star_price}")
+    # # Just gets some space themes for now, price may not actually be there
+    # user_hash = get_user_hash(BS_USERNAME, BS_PASSWORD)
+    # death_star_price = get_set_info("75159-1", user_hash)
+    # print(f"Death Star price: {death_star_price}")
+    #
+    # # Get price guide for a set
+    # set_id = "75159-1"  # Death Star
+    # price_guide = get_price_guide(set_id)
+    # print(price_guide)
 
-    # Get price guide for a set
-    set_id = "75159-1"  # Death Star
-    price_guide = get_set_historical(set_id)
-    print(price_guide)
+    # Build up dataset of features and price changes
+    # Idea: use sets.csv as starting point - has set id and names and some other basic features
+    # Then use name to get list price from lego_sets.csv
+    # Then use set id to get price guide from Bricklink API
+    # If we want more features we can look to Brickset or Bricklink API
+    base = pd.read_csv("../data/sets.csv")
+    list_price_df = pd.read_csv("../data/lego_sets.csv")
+    list_price_df["prod_id"] = list_price_df["prod_id"].astype(int).astype(str)
+
+    base["current_price"] = 0  # Beware of 0's as NA value
+    base["list_price"] = 0
+    for i in range(len(base)):
+        set_id = base["set_num"][i]
+        # list_price = list_price_df.loc[list_price_df['prod_id'] == set_id[:-2], 'list_price']
+        # if not list_price.empty:
+        #     base.loc[i, "current_price"] = get_price_guide(set_id)
+        #     base.loc[i, "list_price"] = list_price
+        base.loc[i, "current_price"] = get_price_guide(set_id)
+
+    base.to_csv("custom.csv", index=False)
 
 
 if __name__ == "__main__":
