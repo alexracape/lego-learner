@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import json
 import pandas as pd
+import numpy as np
 
 # Load environment variables
 dotenv_path = os.path.join(os.path.dirname(__file__), '../.env')
@@ -40,6 +41,47 @@ def get_user_hash(username, password):
 
     # Return the price
     return response.json()["hash"]
+
+
+def get_prices_by_year(year, df, user_hash):
+    """Use Brickset API to get the price of a set"""
+
+    # Set the API endpoint and parameters
+    api_endpoint = "https://brickset.com/api/v3.asmx/getSets"
+    params = {
+        "apiKey": BS_API_KEY,
+        "userHash": user_hash,
+        "params": json.dumps({
+            "year": year,
+        })
+    }
+
+    # Send the API request
+    response = requests.get(api_endpoint, params=params)
+    response = response.json()
+    if "message" in response:
+        print("API Limit Exceeded")
+        return True
+
+    # Lots more features in here if we need it
+    try:
+        sets = response["sets"]
+        for set in sets:
+            set_number = set["number"]
+            set_variant = set["numberVariant"]
+            set_id = f"{set_number}-{set_variant}"
+            try:
+                historical_price = set["LEGOCom"]["US"]["retailPrice"]
+                df.loc[set_id, "list_price"] = historical_price
+            except Exception as e:
+                print(f"Could not find historical price for {set_id} -- {e}")
+                historical_price = 0
+    except Exception as e:
+        print(f"Could not find historical price for {set_id} -- {e}")
+        historical_price = 0
+
+    # Return the price
+    return False
 
 
 def get_historical_price(set_id, user_hash):
@@ -120,25 +162,59 @@ def main():
     # price_guide = get_current_price(set_id)
     # print(price_guide)
 
+    # Get prices by year
+    # df = pd.read_csv("../data/custom_2.csv")
+    # df = df.set_index("set_num")
+    # for year in range(2000, 2024):
+    #     at_limit = get_prices_by_year(year, df, user_hash)
+    #     if at_limit:
+    #         print(f"API LIMIT REACHED: stopped at {year}")
+    #         break
+    #     else:
+    #         print(f"Finished {year}")
+    # df.to_csv("custom_3.csv", index=True)
+    # print(df)
+
     # Build up dataset of features and price changes
     # Idea: use sets.csv as starting point - has set id and names and some other basic features
     # Then use name to get list price from lego_sets.csv
     # Then use set id to get price guide from Bricklink API
     # If we want more features we can look to Brickset or Bricklink API
-    base = pd.read_csv("../data/sets.csv")
-    list_price_df = pd.read_csv("../data/lego_sets.csv")
-    list_price_df["prod_id"] = list_price_df["prod_id"].astype(int).astype(str)
+    # base = pd.read_csv("../data/sets.csv")
+    # list_price_df = pd.read_csv("../data/lego_sets.csv")
+    # list_price_df["prod_id"] = list_price_df["prod_id"].astype(int).astype(str)
+    #
+    # base["current_price"] = 0  # Beware of 0's as NA value
+    # base["list_price"] = 0
+    # for i in range(len(base)):
+    #     set_id = base["set_num"][i]
+    #     #list_price = get_historical_price(set_id, user_hash)
+    #     current_price = get_current_price(set_id)
+    #     base.loc[i, "current_price"] = current_price
+    #     #base.loc[i, "list_price"] = list_price
+    #
+    # base.to_csv("custom_2.csv", index=False)
 
-    base["current_price"] = 0  # Beware of 0's as NA value
-    base["list_price"] = 0
-    for i in range(len(base)):
-        set_id = base["set_num"][i]
-        #list_price = get_historical_price(set_id, user_hash)
-        current_price = get_current_price(set_id)
-        base.loc[i, "current_price"] = current_price
-        #base.loc[i, "list_price"] = list_price
+    # Load Data Sets
+    custom = pd.read_csv("../data/custom_3.csv")
+    lego_sets = pd.read_csv("../data/lego_github.csv")
+    with_list_github = lego_sets[lego_sets["USD_MSRP"] != 0]  # 788
+    with_current = custom[custom["current_price"] != 0]  # 3815 rows
+    with_list = custom[custom["list_price"] != 0] # 788
+    with_both = custom[(custom["current_price"] != 0) & (custom["list_price"] != 0) & (custom["current_price"].notna())]  # 175 rows
 
-    base.to_csv("custom_2.csv", index=False)
+    # Clean up and merge dataframes
+    custom[['set_num', 'variation', 'left_over']] = custom['set_num'].str.split('-', expand=True)
+    current_price_df = custom[["set_num", "current_price"]]
+    base = lego_sets[["Item_Number", "Name", "Year", "Theme", "Subtheme", "Pieces", "Minifigures", "USD_MSRP"]]
+    base = pd.merge(base, current_price_df, left_on="Item_Number", right_on="set_num", how="left")
+    base["current_price"] = base["current_price"].replace(0, np.nan)
+    base.to_csv("custom_4.csv", index=False)
+
+    # # Some basic EDA
+    # clean.plot(x="year", y="current_price", kind="scatter", logy=True, xlabel="Year", ylabel="Current Price")
+    # clean.plot(y="current_price", kind="hist", logy=True, bins=100)
+    print()
 
 
 if __name__ == "__main__":
