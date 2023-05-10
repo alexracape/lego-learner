@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 # Load environment variables
 dotenv_path = os.path.join(os.path.dirname(__file__), '../.env')
 load_dotenv(dotenv_path)
@@ -169,14 +170,15 @@ def get_all_current_prices():
 def get_all_list_prices(year):
     """Use Brickset to get list prices from lego.com
 
-    This approach was abandoned, since the API was returning 0's for almost all sets before 2015 ish
+    Could not be solely used since the API was returning 0's for almost all sets before 2015 ish
     - got 788 prices
     - only 175 overlapped with current trades
+    However it was used to fill in the gaps from the other data source
     """
     user_hash = get_user_hash(BS_USERNAME, BS_PASSWORD)
     df = pd.read_csv("../data/custom_2.csv")
     df = df.set_index("set_num")
-    for year in range(2000, 2024):
+    for year in range(2016, 2024):
         at_limit = get_prices_by_year(year, df, user_hash)
         if at_limit:
             print(f"API LIMIT REACHED: stopped at {year}")
@@ -221,21 +223,26 @@ def eda(data_source="custom_4.csv"):
 
 
 def main():
-    """Main function for manipulating csvs and moving data around"""
+    """Main function for simple tests"""
 
     # Load Data Sets
     custom = pd.read_csv("../data/custom_4.csv")
     lego_sets = pd.read_csv("../data/lego_sets.csv")
+
+    # Combine in recent data from 2015 onwards
+
+    # Clean up and merge dataframes
+    custom[['set_num', 'variation', 'left_over']] = custom['set_num'].str.split('-', expand=True)
+    current_price_df = custom[["set_num", "current_price"]]
+    base = lego_sets[["Item_Number", "Name", "Year", "Theme", "Subtheme", "Pieces", "Minifigures", "USD_MSRP"]]
+    base = pd.merge(base, current_price_df, left_on="Item_Number", right_on="set_num", how="left")
+    base.drop('set_num', axis=1, inplace=True)
+    base["current_price"] = base["current_price"].replace(0, np.nan)
+    base["USD_MSRP"] = base["USD_MSRP"].replace(0, np.nan)
+    base.to_csv("custom_4.csv", index=False)
 
     eda()
 
 
 if __name__ == "__main__":
     main()
-
-
-# Use aggregate data to create market index
-# Day by day of aggregate market stuff
-# Less data with trees
-# Group it by theme and use as market sector
-# Don't have to trade, could always analyze something else with book value or something like that
