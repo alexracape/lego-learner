@@ -17,4 +17,5 @@ TBD
 
 - Use price of all pieces as 'book value' indicator
 - Construct benchmark to compare results with
+- Can we spin as fundamental analysis?
 - Need more finance content...

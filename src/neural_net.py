@@ -10,14 +10,16 @@ import numpy as np
 def main():
 
     # Set up data
-    data = pd.read_csv("../data/custom_2.csv", delimiter=",", quotechar='"')
-    data = data[data["current_price"] != 0]
-    data = data.to_numpy()
+    data = pd.read_csv("../data/custom_6.csv", delimiter=",", quotechar='"')
+    data["Minifigures"] = data["Minifigures"].fillna(0)  # Fill in missing minifigure data with 0
+    data = data.dropna()  # Drop rows with missing data - 1939 remaining...
+    clean = data[["Year", "Pieces", "Minifigures", "USD_MSRP", "Current_Price"]]  # Removed theme and subtheme for now
+    data = clean.to_numpy()
     num_features = 4
 
     # Shuffle the rows and partition some data for testing.
-    features = data[:, 2:-2]
-    labels = data[:, -2]
+    features = data[:, :-1]
+    labels = data[:, -1]
     x_train, x_test, y_train, y_test = train_test_split(features, labels, test_size=0.3)
 
     # Set up the network
@@ -30,6 +32,7 @@ def main():
     correlation = np.corrcoef(y_test.astype(np.float64), predictions)[0, 1]
     print(f"Mean Squared Error: {rmse}")
     print(f"Correlation: {correlation}")
+    # So far correlations are around .5, .57 at best
 
 
 if __name__ == "__main__":
