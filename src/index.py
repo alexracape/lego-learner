@@ -10,7 +10,7 @@ def get_market_weight_index(year):
     # Read in data
     data = pd.read_csv("../data/custom_8.csv")
     data = data.dropna(subset=["USD_MSRP", "Current_Price"])  # Drop missing prices so can be evaluated
-    data = data[data["Year"].between(year, year)]  # Filter by year, do we want to include some previous years where prices are likely the same?
+    data = data[data["Year"].between(year-2, year)]  # Filter by year, do we want to include some previous years where prices are likely the same?
 
     # Get total market cap and set market caps
     data["Market_Cap"] = data["Current_Price"] * data["Owned"]
@@ -25,7 +25,7 @@ def get_equal_weighted_index(year):
     # Read in data
     data = pd.read_csv("../data/custom_8.csv")
     data = data.dropna(subset=["USD_MSRP", "Current_Price"])  # Drop missing prices so can be evaluated
-    data = data[data["Year"].between(year, year)]  # Filter by year, do we want to include some previous years where prices are likely the same?
+    data = data[data["Year"].between(year-2, year)]  # Filter by year, do we want to include some previous years where prices are likely the same?
 
     # Get total market cap and set market caps
     data["Market_Cap"] = data["Current_Price"] * data["Owned"]
@@ -43,6 +43,7 @@ def get_index_return(index):
 
 def main():
 
+    df = pd.DataFrame(columns=["Year", "Market_Weighted_Return", "Equal_Weighted_Return"])
     for year in range(2000, 2023):
         mw_index = get_market_weight_index(year)
         ew_index = get_equal_weighted_index(year)
@@ -50,7 +51,12 @@ def main():
         ew_return = get_index_return(ew_index)
         print(f"{year} Market weighted index return: {mw_return*100}%")
         print(f"{year} Equal weighted index return: {ew_return*100}%")
+        df = pd.concat([df, pd.DataFrame([[year, mw_return, ew_return]], columns=["Year", "Market_Weighted_Return", "Equal_Weighted_Return"])])
 
+    df["Market_Weighted_Return"] = df["Market_Weighted_Return"] * 100
+    df["Equal_Weighted_Return"] = df["Equal_Weighted_Return"] * 100
+    df.plot(x="Year", y=["Market_Weighted_Return", "Equal_Weighted_Return"], ylabel="Return (%)", title="Market Weighted vs. Equal Weighted Index Returns")
+    plt.show()
 
 if __name__ == "__main__":
     main()
