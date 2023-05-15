@@ -7,6 +7,8 @@
 # 5. Used that as a new base and merged in the current price from previous Bricklink API Scrape
 # 6. Realized this dataset only went up to 2015 -> Use brickset API to get updated sets data 2016-2023
 # 7. Realized that original data source only went to 2018 -> rescrape some more Bricklink data to get 2019-2023
+# 8. Realized that API was limiting us to 50 matches, and we needed number owned to construct index
+# 9. Used both API's to scrape dataset from scratch
 
 import requests
 from requests_oauthlib import OAuth1

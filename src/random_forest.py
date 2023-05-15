@@ -59,37 +59,38 @@ def run_experiment(learner, data, num_folds=3):
 def main():
 
     # Set up data
-    data = pd.read_csv("../data/custom_6.csv", delimiter=",", quotechar='"')
+    data = pd.read_csv("../data/custom_8.csv", delimiter=",", quotechar='"')
     data["Minifigures"] = data["Minifigures"].fillna(0)  # Fill in missing minifigure data with 0
     data["Pieces"] = data["Pieces"].fillna(-1)  # Fill in missing piece data with 0
     data["Theme"] = data["Theme"].astype('category').cat.codes  # Categorical code approach
     # counts = data["Theme"].value_counts().to_dict()  # Frequency encoding approach, some themes have same count tho
     # data["Theme"] = data["Theme"].map(counts)
-    data = data.dropna()  # Drop rows with missing data - 1939 remaining...
-    clean = data[["Year", "Pieces", "Minifigures", "Theme", "USD_MSRP", "Current_Price"]]
+    data = data.dropna(subset=["USD_MSRP", "Current_Price"])  # Drop rows with missing data
+    clean = data[["Year", "Pieces", "Theme", "Minifigures", "Owned", "USD_MSRP", "Current_Price"]]
     data = clean.to_numpy()
 
-    # Run experiments to tune hyper-parameters
-    bag_vals = list(range(1, 10)) + list(range(10, 50, 5))
-    experiment_storage = np.zeros((len(bag_vals), 5))
-    for num_bags, i in zip(bag_vals, range(len(bag_vals))):
-        print(f"Running experiment with {num_bags} bags")
-
-        # Set up learner
-        learner = BootstrapLearner(constituent=PERTLearner, kwargs={}, bags=num_bags)
-
-        # Run experiment
-        results = run_experiment(learner, data)
-        experiment_storage[i, 0] = num_bags
-        experiment_storage[i, 1:5] = results
-
-    # Plot experiment results
-    exp_data = pd.DataFrame(experiment_storage, columns=["Bags", "IS RMSE", "IS Correlation", "OS RMSE", "OS Correlation"])
-    exp_data.plot(x="Bags", y=["IS RMSE", "OS RMSE"])
-    plt.show()
-
-    # Get best model and run some tests on it to explore whats going on
-    bag_best_hyper = int(experiment_storage[np.argmin(experiment_storage[:, 3]), 0])
+    # # Run experiments to tune hyperparameters
+    # bag_vals = list(range(1, 10)) + list(range(10, 50, 5))
+    # experiment_storage = np.zeros((len(bag_vals), 5))
+    # for num_bags, i in zip(bag_vals, range(len(bag_vals))):
+    #     print(f"Running experiment with {num_bags} bags")
+    #
+    #     # Set up learner
+    #     learner = BootstrapLearner(constituent=PERTLearner, kwargs={}, bags=num_bags)
+    #
+    #     # Run experiment
+    #     results = run_experiment(learner, data)
+    #     experiment_storage[i, 0] = num_bags
+    #     experiment_storage[i, 1:5] = results
+    #
+    # # Plot experiment results
+    # exp_data = pd.DataFrame(experiment_storage, columns=["Bags", "IS RMSE", "IS Correlation", "OS RMSE", "OS Correlation"])
+    # exp_data.plot(x="Bags", y=["IS RMSE", "OS RMSE"])
+    # plt.show()
+    #
+    # # Get best model and run some tests on it to explore whats going on
+    # bag_best_hyper = int(experiment_storage[np.argmin(experiment_storage[:, 3]), 0])
+    bag_best_hyper = 20
     learner = BootstrapLearner(constituent=PERTLearner, kwargs={}, bags=bag_best_hyper)
     x_train, x_test, y_train, y_test = train_test_split(data[:, :-1], data[:, -1], test_size=0.2, random_state=42)
     learner.train(x_train, y_train)
@@ -103,7 +104,7 @@ def main():
     plt.scatter(predictions, residuals)
     plt.show()
 
-    # Pickout biggest outliers
+    # Pick out biggest outliers
     outliers = np.argsort(residuals)[-10:]
     outlier_features = x_test[outliers, :]
     print(f"Biggest outliers are {outlier_features}")
