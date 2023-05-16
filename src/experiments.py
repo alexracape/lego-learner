@@ -1,4 +1,5 @@
 
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
 import numpy as np
@@ -120,9 +121,53 @@ def run_forecast_experiments():
     plt.show()
 
 
+def get_forecast(year):
+
+    # Load data
+    data = pd.read_csv("../data/custom_8.csv")
+    data["Minifigures"] = data["Minifigures"].fillna(0)  # Fill in missing minifigure data with 0
+    data["Pieces"] = data["Pieces"].fillna(-1)  # Fill in missing piece data with 0
+    data["Theme"] = data["Theme"].astype('category').cat.codes  # Categorical code approach
+    data = data.dropna(subset=["USD_MSRP", "Current_Price"])  # Drop rows with missing prices
+     # Note: took out current price to predict MSRP
+    data["Gap"] = 2023 - data["Year"]
+    training_data = data[["Year", "Gap", "Pieces", "Theme", "Minifigures", "Rating", "Owned",
+                 "USD_MSRP", "Current_Price"]]
+
+    # Try first on random train test split to check accuracy
+    learner = BootstrapLearner(constituent=PERTLearner, kwargs={}, bags=20)
+    x_train, x_test, y_train, y_test = train_test_split(training_data.values[:, :-1], training_data.values[:, -1], test_size=0.2, random_state=42)
+    learner.train(x_train, y_train)
+    predictions = learner.test(x_test)
+    rmse = mean_squared_error(y_test, predictions, squared=False)
+    correlation = np.corrcoef(y_test.astype(np.float64), predictions)[0, 1]
+    print(f"RMSE: {rmse}\nCorrelation: {correlation}")
+
+    # Train learner on all years before this one for prediction
+    x_train = training_data.values[:, :-1]
+    y_train = training_data.values[:, -1]
+    learner = BootstrapLearner(constituent=PERTLearner, kwargs={}, bags=20)
+    learner.train(x_train, y_train)
+
+    # Test learner on this year's sets
+    test_data = training_data.copy()
+    test_data["Gap"] = year - 2023
+    test_data["USD_MSRP"] = test_data["Current_Price"]
+    test_data["Current_Price"] = 0
+    x_test = test_data.values[:, :-1]
+    predictions = learner.test(x_test)
+    training_data["Prediction"] = predictions
+    training_data["Predicted_Gain"] = training_data["Prediction"] / training_data["Current_Price"] - 1
+    training_data["Predicted_Dif"] = training_data["Prediction"] - training_data["Current_Price"]
+    top_ten = training_data.sort_values(by="Predicted_Gain", ascending=False).head(10)
+    top_increases = training_data.sort_values(by="Predicted_Dif", ascending=False).head(10)
+    print(top_ten)
+
+
 def main():
     #run_value_experiments()
-    run_forecast_experiments()
+    #run_forecast_experiments()
+    get_forecast(2028)
 
 
 if __name__ == "__main__":

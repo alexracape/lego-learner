@@ -1,6 +1,6 @@
 
 from sklearn.model_selection import KFold, train_test_split
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 
 import numpy as np
 import pandas as pd
@@ -66,7 +66,7 @@ def main():
     # counts = data["Theme"].value_counts().to_dict()  # Frequency encoding approach, some themes have same count tho
     # data["Theme"] = data["Theme"].map(counts)
     data = data.dropna(subset=["USD_MSRP", "Current_Price"])  # Drop rows with missing data
-    clean = data[["Year", "Pieces", "Theme", "Minifigures", "Owned", "USD_MSRP", "Current_Price"]]
+    clean = data[["Year", "Theme", "Owned", "USD_MSRP", "Current_Price"]]
     data = clean.to_numpy()
 
     # # Run experiments to tune hyperparameters
@@ -97,6 +97,7 @@ def main():
     predictions = learner.test(x_test)
     rmse = mean_squared_error(y_test, predictions, squared=False)
     correlation = np.corrcoef(y_test.astype(np.float64), predictions)[0, 1]
+    r_squared = r2_score(y_test, predictions)
 
     # Only a couple of very large outliers
     residuals = y_test - predictions
@@ -113,6 +114,7 @@ def main():
     print(f"Best model has {bag_best_hyper} bags")
     print(f"RMSE: {rmse}")
     print(f"Correlation: {correlation}")
+    print(f"R^2: {r_squared}")
 
 
 if __name__ == "__main__":

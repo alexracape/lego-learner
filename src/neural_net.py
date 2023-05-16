@@ -10,8 +10,7 @@ import numpy as np
 
 
 def main():
-
-    # Set up data
+c
     data = pd.read_csv("./data/custom_8.csv", delimiter=",", quotechar='"')
     data["Minifigures"] = data["Minifigures"].fillna(0)  # Fill in missing minifigure data with 0
     data["Pieces"] = data["Pieces"].fillna(-1)  # Fill in missing piece data with -1, is this appropriate? need to test
@@ -19,7 +18,7 @@ def main():
     # counts = data["Theme"].value_counts().to_dict()  # Frequency encoding approach, some themes have same count tho
     # data["Theme"] = data["Theme"].map(counts)
     data = data.dropna()  # Drop rows with missing data - 1939 remaining...
-    clean = data[["Year", "Pieces", "Minifigures", "Theme", "USD_MSRP"l]]
+    clean = data[["Year", "Pieces", "Minifigures", "Theme", "USD_MSRP"]]
     data = clean.to_numpy()
     num_features = 5
 
