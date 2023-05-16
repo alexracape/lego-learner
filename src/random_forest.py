@@ -65,8 +65,8 @@ def main():
     data["Theme"] = data["Theme"].astype('category').cat.codes  # Categorical code approach
     # counts = data["Theme"].value_counts().to_dict()  # Frequency encoding approach, some themes have same count tho
     # data["Theme"] = data["Theme"].map(counts)
-    data = data.dropna(subset=["USD_MSRP", "Current_Price"])  # Drop rows with missing data
-    clean = data[["Year", "Theme", "Owned", "USD_MSRP", "Current_Price"]]
+    data = data.dropna(subset=["USD_MSRP"])  # Drop rows with missing data
+    clean = data[["Year", "Theme", "Pieces", "Minifigures", "Rating", "Owned", "USD_MSRP"]]
     data = clean.to_numpy()
 
     # # Run experiments to tune hyperparameters
@@ -99,22 +99,25 @@ def main():
     correlation = np.corrcoef(y_test.astype(np.float64), predictions)[0, 1]
     r_squared = r2_score(y_test, predictions)
 
+    # Print some summary stats
+    print(f"Best model has {bag_best_hyper} bags")
+    print(f"RMSE: {rmse}")
+    print(f"Correlation: {correlation}")
+    print(f"R^2: {r_squared}")
+
     # Only a couple of very large outliers
     residuals = y_test - predictions
     plt.figure()
     plt.scatter(predictions, residuals)
+    plt.xlabel("Predicted Price")
+    plt.ylabel("Residual")
+    plt.title("Residuals for Random Forest MSRP Prediction")
     plt.show()
 
     # Pick out biggest outliers
     outliers = np.argsort(residuals)[-10:]
     outlier_features = x_test[outliers, :]
     print(f"Biggest outliers are {outlier_features}")
-
-    # Print some summary stats
-    print(f"Best model has {bag_best_hyper} bags")
-    print(f"RMSE: {rmse}")
-    print(f"Correlation: {correlation}")
-    print(f"R^2: {r_squared}")
 
 
 if __name__ == "__main__":

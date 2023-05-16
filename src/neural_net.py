@@ -10,7 +10,7 @@ import numpy as np
 
 
 def main():
-c
+
     data = pd.read_csv("./data/custom_8.csv", delimiter=",", quotechar='"')
     data["Minifigures"] = data["Minifigures"].fillna(0)  # Fill in missing minifigure data with 0
     data["Pieces"] = data["Pieces"].fillna(-1)  # Fill in missing piece data with -1, is this appropriate? need to test
