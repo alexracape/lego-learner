@@ -338,20 +338,31 @@ def simple_tests():
     print(price_guide)
 
 
-def eda(data_source="custom_6.csv"):
+def eda(data_source="custom_8.csv"):
     """Some basic EDA to explore the scraped sets / price data"""
+    line, = plt.plot([], [], color='black', linewidth=2, label='S&P 500')
+    # Create the legend
+    plt.legend(handles=[line])
 
     # Load data
     data = pd.read_csv(f"../data/{data_source}")
 
     # Check how much data has both list and current price
     with_both = data[(data["Current_Price"].notna()) & (data["USD_MSRP"].notna())]
+    with_current = data[data["Current_Price"].notna()]
     print(f"Data with both list and current price: {len(with_both)}")
 
     # Plot the price vs year and histogram of price
-    data.plot(x="Year", y="Current_Price", kind="scatter", logy=True, xlabel="Year", ylabel="Current Price")
-    data.plot(y="Current_Price", kind="hist", logy=True, bins=100)
-    data.plot(x="Year", y="USD_MSRP", kind="scatter", logy=True, xlabel="Year", ylabel="List Price")
+    ax = data.plot(x="Year", y="Current_Price", kind="scatter", logy=True, xlabel="Year", ylabel="Current Price")
+    ax.annotate("Death Star", xy=(2005, 1800), xytext=(2010, 5000), color='black', arrowprops={'facecolor':'black', 'edgecolor':'none'})
+    ax.annotate("Brick Seperator", xy=(2011, 0.05), xytext=(1995, .1), color='black', arrowprops={'facecolor':'black', 'edgecolor':'none'})
+    ax.annotate("Crusader's Cart", xy=(1990, 395.00), xytext=(1982, 4000.00), color='black', arrowprops={'facecolor':'black', 'edgecolor':'none'})
+    ax.annotate("Shell Tanker", xy=(1980, 189.00), xytext=(1975, 1000.00), color='black', arrowprops={'facecolor':'black', 'edgecolor':'none'})
+    ax.annotate("Luke's Speeder", xy=(2022, 149.00), xytext=(2016, 2000.00), color='black', arrowprops={'facecolor':'black', 'edgecolor':'none'})
+
+    # data.plot(y="Current_Price", kind="hist", logy=True, bins=1000)
+    # fig, ax = plt.subplots()
+    # ax.hist2d(with_current["Year"], with_current["Current_Price"], bins=100)
     plt.show()
 
 

@@ -166,8 +166,8 @@ def get_forecast(year):
 
 def main():
     #run_value_experiments()
-    #run_forecast_experiments()
-    get_forecast(2028)
+    run_forecast_experiments()
+    #get_forecast(2028)
 
 
 if __name__ == "__main__":
