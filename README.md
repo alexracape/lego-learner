@@ -6,6 +6,8 @@ This project uses a combination of data from two API's
 - Current Price - Bricklink API as of 05/10/2023
 - List prices and features - Brickset API as of 05/10/2023
 
+Check it out on [Kaggle](https://www.kaggle.com/datasets/alexracape/lego-sets-and-prices-over-time)
+
 ## The Model
 Used a random forest and neural network and contrasted resulsts across the two models
 
